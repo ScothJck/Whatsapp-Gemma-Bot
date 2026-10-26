@@ -1,0 +1,4 @@
+.env
+venv
+prueva_gemini.py
+servidor/__pycache__
