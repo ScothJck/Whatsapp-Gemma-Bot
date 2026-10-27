@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from contestar_whatsapp import ContestarMensajeWhatsApp
+from .contestar_whatsapp import ContestarMensajeWhatsApp
 
 
 # Creamos el punto de entrada de la API
