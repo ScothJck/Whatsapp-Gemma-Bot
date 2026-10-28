@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Response, Request
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
+import httpx
 from .contestar_whatsapp import ContestarMensajeWhatsApp
 
 
@@ -40,11 +41,53 @@ def VerificarWebHook(
 
 
 @app.post("/webhook")
-def RecibirMensajeWhatsApp(data: MensajeWhatsApp):
+async def RecibirMensajeWhatsApp(request: Request):
     """Recibe un mensaje de WhatsApp y devuelve la respuesta del asistente"""
 
-    print(f"\n[Nuevo mensaje de {data.sender}]: {data.message}")
+    body = await request.json()
 
-    respuesta_ia = ContestarMensajeWhatsApp(data.message)
+    try:
+        entry = body.get("entry", [{}])[0]
+        changes = entry.get("changes", [{}])[0]
+        value = changes.get("value", {})
 
-    return {"status" : "success", "respuesta": respuesta_ia}
+        if("messages" in value):
+            mensaje_obj = value["messages"][0]
+            remitente = mensaje_obj.get("from")
+            texto_mensaje = mensaje_obj.get("text", {}).get("body")
+
+            print(f"\n[MENSAJE REAL DE WHATSAPP] De: {remitente} | Texto: {texto_mensaje}")
+
+        respuesta_ia = ContestarMensajeWhatsApp(texto_mensaje)
+
+        mensaje_de_respuesta = respuesta_ia.text
+
+        print("Respuesta IA: ", mensaje_de_respuesta)
+
+        WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
+        PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
+
+        url_meta = f"https://graph.facebook.com/v20.0/{PHONE_NUMBER_ID}/messages"
+
+        headers = {
+            "Authorization" : f"Bearer {WHATSAPP_TOKEN}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": remitente,
+            "type": "text",
+            "text": {"body": mensaje_de_respuesta}
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url_meta, json=payload, headers=headers)
+            print("Respuesta enviada a Meta:", response.json())
+        
+
+    except Exception as e:
+        print("Error Procesando el Webhook, ", e)
+
+
+    return {"status" : "success"}
