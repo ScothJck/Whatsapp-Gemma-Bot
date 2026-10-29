@@ -60,9 +60,7 @@ async def RecibirMensajeWhatsApp(request: Request):
 
         respuesta_ia = ContestarMensajeWhatsApp(texto_mensaje)
 
-        mensaje_de_respuesta = respuesta_ia.text
-
-        print("Respuesta IA: ", mensaje_de_respuesta)
+        print("Respuesta IA: ", respuesta_ia)
 
         WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
         PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
@@ -78,7 +76,7 @@ async def RecibirMensajeWhatsApp(request: Request):
             "messaging_product": "whatsapp",
             "to": remitente,
             "type": "text",
-            "text": {"body": mensaje_de_respuesta}
+            "text": {"body": respuesta_ia}
         }
 
         async with httpx.AsyncClient() as client:
