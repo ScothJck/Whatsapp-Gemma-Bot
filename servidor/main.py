@@ -27,7 +27,7 @@ def Home():
     return {"status": "¡El bot de FastAPI con Gemma está activo y listo! 🚀"}
 
 
-@app.get("/webhook")
+@app.get("/conection/webhook")
 def VerificarWebHook(
     mode : str = Query(None, alias="hub_mode"),
     token : str = Query(None, alias="hub.verify_token"),
